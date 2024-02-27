@@ -1,6 +1,6 @@
 <?php
 
-namespace AdminPanel;
+namespace Administration;
 
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 
@@ -10,6 +10,6 @@ class ServiceProvider extends BaseServiceProvider {
     }
 
     public function boot() {
-        $this->loadRoutesFrom(__DIR__.'./route.php');
+        $this->loadRoutesFrom(__DIR__.'/route.php');
     }
 }  
