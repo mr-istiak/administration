@@ -1,6 +1,7 @@
 {
     "name": "mr-istiak/administration",
     "type": "library",
+    "homepage": "https://github.com/mr-istiak/administration",
     "autoload": {
         "psr-4": {
             "Administration\\": "src/"
