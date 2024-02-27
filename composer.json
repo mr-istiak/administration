@@ -1,6 +1,8 @@
 {
     "name": "mr-istiak/administration",
     "type": "library",
+    "description": "Administration",
+    "license": "MIT",
     "homepage": "https://github.com/mr-istiak/administration",
     "autoload": {
         "psr-4": {
