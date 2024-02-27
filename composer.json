@@ -4,7 +4,6 @@
     "description": "Administration",
     "license": "MIT",
     "homepage": "https://github.com/mr-istiak/administration",
-    "ext-curl": "*",
     "autoload": {
         "psr-4": {
             "Administration\\": "src/"
@@ -17,6 +16,7 @@
     ],
     "require": {
         "php":  ">=8.0.0",
+        "ext-curl": "*",
         "laravel/framework": ">=10.0"
     },
     "extra": {
