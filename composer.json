@@ -15,9 +15,9 @@
         }
     ],
     "require": {
-        "php":  ">=8.0.0",
-        "ext-curl": "*",
-        "laravel/framework": ">=10.0"
+        "php": "^7.2|~8.0.0|~8.1.0|~8.2.0|~8.3.0",
+        "ext-json": "*",
+        "laravel/framework": "^6.0|^7.0|^8.74|^9.0|^10.0"
     },
     "extra": {
         "laravel": {
