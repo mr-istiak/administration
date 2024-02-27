@@ -1,0 +1,25 @@
+{
+    "name": "mr-istiak/administration",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Administration\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "M.R. Istiak"
+        }
+    ],
+    "require": {
+        "php":  ">=8.0.0",
+        "laravel/framework": ">=10.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Administration\\ServiceProvider"
+            ]
+        }
+    }
+}
