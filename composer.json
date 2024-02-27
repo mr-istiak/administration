@@ -6,7 +6,7 @@
     "homepage": "https://github.com/mr-istiak/administration",
     "autoload": {
         "psr-4": {
-            "Administration\\": "src/"
+            "AdminPanel\\": "src/"
         }
     },
     "authors": [
@@ -22,7 +22,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Administration\\ServiceProvider"
+                "AdminPanel\\ServiceProvider"
             ]
         }
     },

@@ -1,6 +1,6 @@
 <?php
 
-namespace Administration;
+namespace AdminPanel;
 
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 
