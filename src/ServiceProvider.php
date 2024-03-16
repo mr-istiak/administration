@@ -10,6 +10,12 @@ class ServiceProvider extends BaseServiceProvider {
     }
 
     public function boot() {
+
         $this->loadRoutesFrom(__DIR__.'/route.php');
+
+        if(! $this->app->runningInConsole()) return;
+        $this->commands([
+            InstallCommand::class
+        ]);
     }
-}  
+}
