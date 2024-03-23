@@ -12,25 +12,33 @@ use Inertia\Inertia;
 
 class ModelController extends Controller
 {
+    protected $model;
+
+    public function __construct(Request $request)
+    {
+        foreach (config('administration.menu.models') as $key => $value) {
+            if( explode('.', $request->route()->getName())[0] === str_replace(' ', '-', strtolower($key)) ) return $this->model = $value;
+        }
+    }
+
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index()
     {
-        $model = $this->getModel($request);
-        $columns = array_flip(Schema::getColumnListing((new $model)->getTable()));
-        foreach (config('administration.models')[$model]['columns'] as $key => $value) {
+        $columns = array_flip(Schema::getColumnListing((new $this->model)->getTable()));
+        foreach (config('administration.models')[$this->model]['columns'] as $key => $value) {
             $props = array_flip(explode(',', $value));
             if(isset($props['hidden'])) unset($columns[$key]);
         }
         $options = [
-            'new' => isset(config('administration.models')[$model]['new']) ? config('administration.models')[$model]['new'] : true,
-            'edit' => isset(config('administration.models')[$model]['edit']) ? config('administration.models')[$model]['edit'] : true,
-            'delete' => isset(config('administration.models')[$model]['delete']) ? config('administration.models')[$model]['delete'] : true
+            'new' => isset(config('administration.models')[$this->model]['new']) ? config('administration.models')[$this->model]['new'] : true,
+            'edit' => isset(config('administration.models')[$this->model]['edit']) ? config('administration.models')[$this->model]['edit'] : true,
+            'delete' => isset(config('administration.models')[$this->model]['delete']) ? config('administration.models')[$this->model]['delete'] : true
         ];
         return Inertia::render('Admin/Model/Index', [
             'columns' => array_keys($columns),
-            'data' => $model::all(array_keys($columns)),
+            'data' => $this->model::all(array_keys($columns)),
             'options' => $options
         ]);
     }
@@ -38,14 +46,13 @@ class ModelController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(Request $request)
+    public function create()
     {
-        $modelName = $this->getModel($request);
-        $name = explode('\\', $modelName);
+        $name = explode('\\', $this->model);
         $name = array_pop($name);
-        $inputs = $this->inputs($modelName);
+        $inputs = $this->inputs();
 
-        return Inertia::render(config('administration.models')[$modelName]['view']['create'] ?? 'Admin/Model/Create', compact('inputs', 'name'));
+        return Inertia::render(config('administration.models')[$this->model]['view']['create'] ?? 'Admin/Model/Create', compact('inputs', 'name'));
     }
 
     /**
@@ -53,9 +60,8 @@ class ModelController extends Controller
      */
     public function store(Request $request) : RedirectResponse
     {
-        $modelName = $this->getModel($request);
-        $modelKeyName = explode('\\', $modelName)[array_key_last(explode('\\', $modelName))];
-        $model = new $modelName;
+        $modelKeyName = explode('\\', $this->model)[array_key_last(explode('\\', $this->model))];
+        $model = new $this->model;
         if(class_exists('App\\Http\\Requests\\'.$modelKeyName.'StoreRequest')) {
             $request = ('App\\Http\\Requests\\'.$modelKeyName.'StoreRequest')::createFrom($request);
             $response = $request->validate($request->rules());
@@ -66,17 +72,16 @@ class ModelController extends Controller
         if(class_exists('App\\Events\\'.$modelKeyName.'Created')) {
             event(new ('App\\Events\\'.$modelKeyName.'Created')($model));
         }
-        return redirect()->route(explode('.', $request->route()->getName())[0].'.index');
+        return redirect()->route(explode('.', $request->route()->getName())[0].'.index')->with('success.'.$modelKeyName.'Created', $modelKeyName.' created successfully');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, int $id)
+    public function show(int $id)
     {
-        $modelName = $this->getModel($request);
-        $modelKeyName = explode('\\', $modelName)[array_key_last(explode('\\', $modelName))];
-        return Inertia::render($modelKeyName.'/Show', $modelName::find($id));
+        $modelKeyName = explode('\\', $this->model)[array_key_last(explode('\\', $this->model))];
+        return Inertia::render($modelKeyName.'/Show', $this->model::find($id));
     }
 
     /**
@@ -84,12 +89,11 @@ class ModelController extends Controller
      */
     public function edit(Request $request, string $id)
     {
-        $modelName = $this->getModel($request);
-        $name = explode('\\', $modelName);
+        $name = explode('\\', $this->model);
         $name = array_pop($name);
-        $inputs = $this->inputs($modelName, $modelName::find($id));
+        $inputs = $this->inputs($this->model::find($id));
 
-        return Inertia::render(config('administration.models')[$modelName]['view']['create'] ?? 'Admin/Model/Create', compact('inputs', 'name'));
+        return Inertia::render(config('administration.models')[$this->model]['view']['create'] ?? 'Admin/Model/Create', compact('inputs', 'name'));
 
     }
 
@@ -98,9 +102,8 @@ class ModelController extends Controller
      */
     public function update(Request $request, int $id) : RedirectResponse
     {
-        $modelName = $this->getModel($request);
-        $modelKeyName = explode('\\', $modelName)[array_key_last(explode('\\', $modelName))];
-        $model = $modelName::find($id);
+        $modelKeyName = explode('\\', $this->model)[array_key_last(explode('\\', $this->model))];
+        $model = $this->model::find($id);
         if(class_exists('App\\Http\\Requests\\'.$modelKeyName.'UpdateRequest')) {
             $request = ('App\\Http\\Requests\\'.$modelKeyName.'UpdateRequest')::createFrom($request);
             $response = $request->validate($request->rules());
@@ -111,7 +114,7 @@ class ModelController extends Controller
         if(class_exists('App\\Events\\'.$modelKeyName.'Updated')) {
             event(new ('App\\Events\\'.$modelKeyName.'Updated')($model));
         }
-        return redirect()->route(explode('.', $request->route()->getName())[0].'.index');
+        return redirect()->route(explode('.', $request->route()->getName())[0].'.index')->with('success.'.$modelKeyName.'Updated', $modelKeyName.' updated successfully');
     }
 
     /**
@@ -119,16 +122,10 @@ class ModelController extends Controller
      */
     public function destroy(Request $request, int $id) : RedirectResponse
     {
-        $model = (new ($this->getModel($request)))->find($id);
+        $modelKeyName = explode('\\', $this->model)[array_key_last(explode('\\', $this->model))];
+        $model = (new $this->model)->find($id);
         $model->delete();
-        return back();
-    }
-
-    private function getModel(Request $request)
-    {
-        foreach (config('administration.menu.models') as $key => $value) {
-            if( explode('.', $request->route()->getName())[0] === str_replace(' ', '-', strtolower($key)) ) return $value;
-        }
+        return back()->with('success.'.$modelKeyName.'Deleted', $modelKeyName.' deleted successfully');
     }
 
     /**
@@ -160,11 +157,10 @@ class ModelController extends Controller
         return $validations;
     }
 
-    private function inputs($modelName, $default = null) {
-        $model = new $modelName;
+    private function inputs($default = null) {
         $inputs = [];
-        array_map(function ($column) use (&$inputs, &$modelName, $default) {
-            $attrs = array_flip(explode(',', (config('administration.models')[$modelName]['columns'][$column['name']] ?? '')));
+        array_map(function ($column) use (&$inputs, $default) {
+            $attrs = array_flip(explode(',', (config('administration.models')[$this->model]['columns'][$column['name']] ?? '')));
             if(isset($attrs['non-writable'])) return;
             $props = [ 'required' => !$column['nullable'], 'type' => $column['type_name'] ];
             if($default) {
@@ -172,7 +168,7 @@ class ModelController extends Controller
                 if(isset($attrs['disabled'])) $props['disabled'] = true;
             }
             $inputs[$column['name']] = $props;
-        }, Schema::getColumns($model->getTable()));
+        }, Schema::getColumns((new $this->model)->getTable()));
         if($default) $inputs['id'] = ['required' => false, 'type' => 'hidden', 'default' => $default['id']];
         return $inputs;
     }
