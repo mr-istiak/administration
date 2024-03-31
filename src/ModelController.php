@@ -14,35 +14,58 @@ class ModelController extends Controller
 {
     protected $model;
 
+    /**
+     * Set the model property based on the route name.
+     *
+     * @param Request $request The current request
+     */
     public function __construct(Request $request)
     {
+        // Loop through the models in the menu config and compare the route name to the
+        // lowercase, hyphenated version of the menu label. If there is a match, set the
+        // model property to the corresponding class name.
         foreach (config('administration.menu.models') as $key => $value) {
             if( explode('.', $request->route()->getName())[0] === str_replace(' ', '-', strtolower($key)) ) return $this->model = $value;
         }
     }
-
     /**
      * Display a listing of the resource.
+     *
+     * @return \Inertia\Response
      */
-    public function index()
+    public function index(): \Inertia\Response
     {
+        // Get the column names from the database and reverse the array
         $columns = array_flip(Schema::getColumnListing((new $this->model)->getTable()));
-        foreach (config('administration.models')[$this->model]['columns'] as $key => $value) {
+
+        // Loop through the columns and remove any hidden ones
+        foreach ((config('administration.models')[$this->model]['columns'] ?? []) as $key => $value) {
             $props = array_flip(explode(',', $value));
-            if(isset($props['hidden'])) unset($columns[$key]);
+
+            if (isset($props['hidden'])) {
+                unset($columns[$key]);
+            }
         }
+
+        // Set up the options array
         $options = [
             'new' => isset(config('administration.models')[$this->model]['new']) ? config('administration.models')[$this->model]['new'] : true,
             'edit' => isset(config('administration.models')[$this->model]['edit']) ? config('administration.models')[$this->model]['edit'] : true,
             'delete' => isset(config('administration.models')[$this->model]['delete']) ? config('administration.models')[$this->model]['delete'] : true
         ];
-        return Inertia::render('Admin/Model/Index', [
+
+        // Return the index view
+        return Inertia::render(config('administration.models')[$this->model]['view']['index'] ?? 'Admin/Model/Index', [
+            // Pass the column names as a keyed array
             'columns' => array_keys($columns),
+
+            // Pass the model data with the specified column names
             'data' => $this->model::all(array_keys($columns)),
-            'options' => $options
+
+            // Pass the options array
+            'options' => $options,
         ]);
     }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -94,7 +117,6 @@ class ModelController extends Controller
         $inputs = $this->inputs($this->model::find($id));
 
         return Inertia::render(config('administration.models')[$this->model]['view']['create'] ?? 'Admin/Model/Create', compact('inputs', 'name'));
-
     }
 
     /**
@@ -142,7 +164,7 @@ class ModelController extends Controller
         array_map(function ($column) use (&$validations, &$request, $model, $update) {
             if(!isset($request->all()[$column['name']])) return;
             $validation = [];
-            if(!$column['nullable']) $validation[] = 'required';
+            if(($column['default'] === null) && !$column['nullable']) $validation[] = 'required';
             if(collect(['bigint', 'decimal', 'double', 'integer', 'mediumint', 'smallint', 'tinyint'])->contains($column['type_name'])) $validation[] = 'integer';
             if (collect(['char', 'float', 'ulid', 'varchar'])->contains($column['type_name'])) $validation[] = 'max:255';
             if ('ulid' === $column['type_name']) $validation[] = 'ulid';
@@ -154,6 +176,7 @@ class ModelController extends Controller
             }
             $validations[$column['name']] = array_values($validation);
         }, Schema::getColumns($model->getTable()));
+
         return $validations;
     }
 

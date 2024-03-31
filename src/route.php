@@ -1,6 +1,7 @@
 <?php
 
 use Administration\ModelController;
+use Administration\RoleController;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -46,5 +47,9 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
             $route = $route->except($exepts);
         });
     });
+
+    Route::get('roles/create', [RoleController::class, 'create'])->name('roles.create');
+    Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
+    Route::post('users/{user}/role', [RoleController::class, 'update'])->name('users.role.change');
 });
 
